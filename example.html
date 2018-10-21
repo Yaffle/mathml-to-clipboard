@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>mathml-to-clipboard</title>
+  <script src="http://fred-wang.github.io/mathml.css/mspace.js"></script>
+  <script src="dist/main.js"></script>
+</head>
+<body>
+
+<p>
+  Try to select the next MathML block or it's part with <mark>text selection</mark>, then copy (<kbd>Ctrl+C</kbd>) and paste into a text editor:
+</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>x</mi><mo>=</mo><mrow><mfrac><mrow><mo>&#x2212;</mo><mi>b</mi><mo>&#x00B1;</mo><msqrt><msup><mi>b</mi><mn>2</mn></msup><mo>&#x2212;</mo><mn>4</mn><mo>&#x2062;</mo><mi>a</mi><mo>&#x2062;</mo><mi>c</mi></msqrt></mrow><mrow><mn>2</mn><mo>&#x2062;</mo><mi>a</mi></mrow></mfrac></mrow></math>
+
+<p>
+  You should see something like <code>x=(-b±sqrt(b^2-4ac))/(2a)</code>, not <code>x = − b ± b 2 − 4 a c 2 a</code>.
+</p>
+
+<p>
+  You may also try to drag and drop the selection instead of using the clipboard.
+</p>
+
+</body>
+</html>
