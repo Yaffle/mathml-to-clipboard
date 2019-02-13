@@ -8,5 +8,10 @@
   },
   "browser": {
     "mathml-to-asciimath": "./mathml-to-asciimath.js"
-  }
+  },
+  "keywords": [
+    "mathml",
+    "clipboard",
+    "asciimath"
+  ]
 }
