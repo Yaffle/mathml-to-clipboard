@@ -1,4 +1,6 @@
 {
+  "name": "mathml-to-clipboard",
+  "version": "1.0.0",
   "devDependencies": {
     "mathml-to-asciimath": "latest",
     "browserify": "latest"
