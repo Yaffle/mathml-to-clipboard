@@ -1,9 +1,23 @@
 {
+  "author": {
+    "name": "Yaffle"
+  },
+  "bugs": {
+    "url": "https://github.com/Yaffle/mathml-to-clipboard/issues"
+  },
   "name": "mathml-to-clipboard",
-  "version": "1.0.0",
+  "description": "A copy event handler for a web application to transform MathML into AsciiMath and put into the clipboard.",
+  "homepage": "https://github.com/Yaffle/mathml-to-clipboard#readme",
+  "version": "1.0.1",
+  "license": "ISC",
+  "main": "dist/main.js",
   "devDependencies": {
     "mathml-to-asciimath": "latest",
     "browserify": "latest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yaffle/mathml-to-clipboard.git"
   },
   "scripts": {
     "build": "browserify mathml-to-clipboard.js > dist/main.js"
