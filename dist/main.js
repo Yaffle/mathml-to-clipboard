@@ -55,7 +55,7 @@ function toAsciiMath(mathmlNode) {
 module.exports = toAsciiMath;
 
 },{"mathml-to-asciimath/lib/handlers/math":3,"mathml-to-asciimath/lib/handlers/mfrac":4,"mathml-to-asciimath/lib/handlers/mi":5,"mathml-to-asciimath/lib/handlers/mn":6,"mathml-to-asciimath/lib/handlers/mo":7,"mathml-to-asciimath/lib/handlers/mover":8,"mathml-to-asciimath/lib/handlers/mrow":9,"mathml-to-asciimath/lib/handlers/msqrt":10,"mathml-to-asciimath/lib/handlers/mstyle":11,"mathml-to-asciimath/lib/handlers/msub":12,"mathml-to-asciimath/lib/handlers/msup":13,"mathml-to-asciimath/lib/handlers/mtext":14}],2:[function(require,module,exports){
-/*global window, document, console, Node */
+/*global window, document, console, Node, XMLSerializer */
 "use strict";
 
 var transformMathMLToAsciiMath = require("mathml-to-asciimath");
@@ -78,7 +78,7 @@ var isBlock = function (display) {
 
 var getNodeLength = function (container) {
   if (container.nodeType === Node.TEXT_NODE) {
-    return container.nodeValue.length;
+    return container.data.length;
   }
   if (container.nodeType === Node.ELEMENT_NODE) {
     var count = 0;
@@ -139,15 +139,15 @@ var serialize = function (range, isLineStart) {
 
   if (node.nodeType === Node.TEXT_NODE) {
     if (node !== startContainer || node !== endContainer) {
-      throw new Error();
+      throw new TypeError();
     }
-    var nodeValue = node.nodeValue.slice(startOffset, endOffset);
-    //var nodeValue = node.nodeValue.slice(node === startContainer ? startOffset : 0, node === endContainer ? endOffset : node.nodeValue.length);
-    nodeValue = nodeValue.replace(/[\u0020\n\r\t\v]+/g, " ");
+    var data = node.data.slice(startOffset, endOffset);
+    //var data = node.data.slice(node === startContainer ? startOffset : 0, node === endContainer ? endOffset : node.data.length);
+    data = data.replace(/[\u0020\n\r\t\v]+/g, " ");
     if (isLineStart) {
-      nodeValue = nodeValue.replace(/^[\u0020\n\r\t\v]/g, "");
+      data = data.replace(/^[\u0020\n\r\t\v]/g, "");
     }
-    return nodeValue;
+    return data;
   }
   if (node.nodeType === Node.ELEMENT_NODE) {
     var display = window.getComputedStyle(node, null).display;
@@ -162,11 +162,11 @@ var serialize = function (range, isLineStart) {
     var x = undefined;
     if (isBoundaryPoint(startContainer, startOffset, "start", node) &&
         isBoundaryPoint(endContainer, endOffset, "end", node)) {
-      var tagName = node.tagName.toUpperCase();
-      if (tagName === "MATH" || isMathMLTagName(tagName)) {
+      var tagName = node.tagName.toLowerCase();
+      if (tagName === "math" || (tagName !== "mtext" && isMathMLTagName(tagName))) {
         x = transformMathMLToAsciiMath(node);
       }
-      if (tagName === "BR") {
+      if (tagName === "br") {
         x = "\n";
       }
     }
@@ -177,15 +177,13 @@ var serialize = function (range, isLineStart) {
       var endChildNode = getChildNode(endContainer, endOffset, "end", node);
       var childNode = startChildNode;
       while (childNode !== endChildNode) {
-        var childNodeRange = document.createRange();
-        childNodeRange.setStart(childNode, 0);
-        childNodeRange.setEnd(childNode, getNodeLength(childNode));
-        if (childNode === startChildNode && startContainer !== node) {
-          childNodeRange.setStart(startContainer, startOffset);
-        }
-        if (childNode.nextSibling === endChildNode && endContainer !== node) {
-          childNodeRange.setEnd(endContainer, endOffset);
-        }
+        var childNodeRange = {
+          startContainer: childNode === startChildNode && startContainer !== node ? startContainer : childNode,
+          startOffset: childNode === startChildNode && startContainer !== node ? startOffset : 0,
+          endContainer: childNode.nextSibling === endChildNode && endContainer !== node ? endContainer : childNode,
+          endOffset: childNode.nextSibling === endChildNode && endContainer !== node ? endOffset : getNodeLength(childNode),
+          commonAncestorContainer: childNode
+        };
         var y = serialize(childNodeRange, isLineStart);
         isLineStart = y === "" && isLineStart || y.slice(-1) === "\n";
         result += y;
@@ -206,9 +204,16 @@ var serialize = function (range, isLineStart) {
 };
 
 var serializeAsPlainText = function (range) {
-  var isLineStart = !(range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.nodeValue.slice(0, range.startOffset).replace(/\s+/g, "") !== "");
-  var isLineEnd = !(range.endContainer.nodeType === Node.TEXT_NODE && range.endContainer.nodeValue.slice(range.endOffset, range.endContainer.nodeValue.length).replace(/\s+/g, "") !== "");
-  var value = serialize(range, false);
+  var isLineStart = !(range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.data.slice(0, range.startOffset).replace(/\s+/g, "") !== "");
+  var isLineEnd = !(range.endContainer.nodeType === Node.TEXT_NODE && range.endContainer.data.slice(range.endOffset, range.endContainer.data.length).replace(/\s+/g, "") !== "");
+  var staticRange = {
+    startContainer: range.startContainer,
+    startOffset: range.startOffset,
+    endContainer: range.endContainer,
+    endOffset: range.endOffset,
+    commonAncestorContainer: range.commonAncestorContainer
+  };
+  var value = serialize(staticRange, false);
   if (isLineStart) {
     value = value.replace(/^\s/g, "");
   }
@@ -219,16 +224,16 @@ var serializeAsPlainText = function (range) {
 };
 
 var isMathMLTagName = function (tagName) {
-  if (tagName.charCodeAt(0) === "M".charCodeAt(0)) {
+  if (tagName.charCodeAt(0) === "m".charCodeAt(0)) {
     switch (tagName) {
-      case "MAIN":
-      case "MAP":
-      case "MARK":
-      case "MATH":
-      case "MENU":
-      case "MENUITEM":
-      case "META":
-      case "METER":
+      case "main":
+      case "map":
+      case "mark":
+      case "math":
+      case "menu":
+      case "menuitem":
+      case "meta":
+      case "meter":
         return false;
     }
     return true;
@@ -238,15 +243,18 @@ var isMathMLTagName = function (tagName) {
 
 var serializeAsHTML = function (range) {
   var fragment = range.cloneContents();
-  var div = document.createElement("div");
-  div.appendChild(fragment);
-  return div.innerHTML;
+  if (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE && range.commonAncestorContainer.namespaceURI === "http://www.w3.org/1998/Math/MathML") {//?
+    var math = document.createElementNS("http://www.w3.org/1998/Math/MathML", "math");
+    math.appendChild(fragment);
+    fragment = math;
+  }
+  return new XMLSerializer().serializeToString(fragment); // to have the xmlns for <math> elements
 };
 
 var onCopyOrDragStart = function (event) {
   var dataTransfer = event.type === "copy" ? event.clipboardData : event.dataTransfer;
-  var tagName = event.target.nodeType === Node.ELEMENT_NODE ? event.target.tagName.toUpperCase() : "";
-  if (tagName !== "INPUT" && tagName !== "TEXTAREA" && (tagName !== "A" || event.type === "copy") && tagName !== "IMG") {
+  var tagName = event.target.nodeType === Node.ELEMENT_NODE ? event.target.tagName.toLowerCase() : "";
+  if (tagName !== "input" && tagName !== "textarea" && (tagName !== "a" || event.type === "copy") && tagName !== "img") {
     //! dataTransfer.effectAllowed throws an exception in FireFox if tagName is INPUT or TEXTAREA
     if ((event.type === "copy" || dataTransfer.effectAllowed === "uninitialized") && !event.defaultPrevented) {
       var selection = window.getSelection();
@@ -256,12 +264,14 @@ var onCopyOrDragStart = function (event) {
         var plainText = "";
         var htmlText = "";
         while (++i < rangeCount) {
+          //TODO: Firefox makes multiple selection when some <button> elements are selected ...
           var range = selection.getRangeAt(i);
           htmlText += serializeAsHTML(range);
           plainText += serializeAsPlainText(range);
         }
-        dataTransfer.setData("Text", plainText);
+        // see also https://github.com/w3c/clipboard-apis/issues/48
         dataTransfer.setData("text/html", htmlText);
+        dataTransfer.setData("text/plain", plainText);
         if (event.type === "copy") {
           event.preventDefault();
         } else {
