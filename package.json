@@ -8,7 +8,7 @@
   "name": "mathml-to-clipboard",
   "description": "A copy event handler for a web application to transform MathML into AsciiMath and put into the clipboard.",
   "homepage": "https://github.com/Yaffle/mathml-to-clipboard#readme",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "ISC",
   "main": "dist/main.js",
   "devDependencies": {
