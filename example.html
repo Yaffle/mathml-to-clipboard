@@ -12,7 +12,40 @@
   Try to select the next MathML block or it's part with <mark>text selection</mark>, then copy (<kbd>Ctrl+C</kbd>) and paste into a text editor:
 </p>
 
-<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>x</mi><mo>=</mo><mrow><mfrac><mrow><mo>&#x2212;</mo><mi>b</mi><mo>&#x00B1;</mo><msqrt><msup><mi>b</mi><mn>2</mn></msup><mo>&#x2212;</mo><mn>4</mn><mo>&#x2062;</mo><mi>a</mi><mo>&#x2062;</mo><mi>c</mi></msqrt></mrow><mrow><mn>2</mn><mo>&#x2062;</mo><mi>a</mi></mrow></mfrac></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+  <mi>x</mi>
+  <mo>=</mo>
+  <mfrac>
+    <mrow>
+      <mrow>
+        <mo>&minus;</mo>
+        <mi>b</mi>
+      </mrow>
+      <mo>&plusmn;</mo>
+      <msqrt>
+        <mrow>
+          <msup>
+            <mi>b</mi>
+            <mn>2</mn>
+          </msup>
+          <mo>&minus;</mo>
+          <mrow>
+            <mn>4</mn>
+            <mo>&it;</mo>
+            <mi>a</mi>
+            <mo>&it;</mo>
+            <mi>c</mi>
+          </mrow>
+        </mrow>
+      </msqrt>
+    </mrow>
+    <mrow>
+      <mn>2</mn>
+      <mo>&it;</mo>
+      <mi>a</mi>
+    </mrow>
+  </mfrac>
+</math>
 
 <p>
   You should see something like <code>x=(-b±sqrt(b^2-4ac))/(2a)</code>, not <code>x = − b ± b 2 − 4 a c 2 a</code>.

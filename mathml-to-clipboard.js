@@ -1,4 +1,4 @@
-/*global window, document, console, Node, XMLSerializer */
+/*global window, document, Node, XMLSerializer */
 "use strict";
 
 var transformMathMLToAsciiMath = require("mathml-to-asciimath");
@@ -36,15 +36,18 @@ var getNodeLength = function (container) {
 };
 
 var isBoundaryPoint = function (container, offset, which, node) {
-  var x = container;
   if (which === "end" && offset !== getNodeLength(container) || which === "start" && offset !== 0) {
     return false;
   }
-  while (x !== node) {
-    if (which === "end" && x.nextSibling != null || which === "start" && x.previousSibling != null) {
+  for (var x = container; x !== node; x = x.parentNode) {
+    var y = which === "end" ? x.nextSibling : (which === "start" ? x.previousSibling : null);
+    // https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Whitespace#Whitespace_helper_functions
+    while (y != null && y.nodeType !== Node.ELEMENT_NODE && (y.nodeType !== Node.TEXT_NODE || /^[\t\n\f\r\u0020]*$/.test(y.data))) {
+      y = which === "end" ? y.nextSibling : (which === "start" ? y.previousSibling : null);
+    }
+    if (y != null) {
       return false;
     }
-    x = x.parentNode;
   }
   return true;
 };
@@ -85,10 +88,9 @@ var serialize = function (range, isLineStart) {
       throw new TypeError();
     }
     var data = node.data.slice(startOffset, endOffset);
-    //var data = node.data.slice(node === startContainer ? startOffset : 0, node === endContainer ? endOffset : node.data.length);
-    data = data.replace(/[\u0020\n\r\t\v]+/g, " ");
+    data = data.replace(/[\t\n\f\r\u0020]+/g, " ");
     if (isLineStart) {
-      data = data.replace(/^[\u0020\n\r\t\v]/g, "");
+      data = data.replace(/^[\t\n\f\r\u0020]/g, "");
     }
     return data;
   }
@@ -106,7 +108,7 @@ var serialize = function (range, isLineStart) {
     if (isBoundaryPoint(startContainer, startOffset, "start", node) &&
         isBoundaryPoint(endContainer, endOffset, "end", node)) {
       var tagName = node.tagName.toLowerCase();
-      if (tagName === "math" || (tagName !== "mtext" && isMathMLTagName(tagName))) {
+      if (tagName === "math" || (tagName !== "mtext" && node.namespaceURI === "http://www.w3.org/1998/Math/MathML")) {
         x = transformMathMLToAsciiMath(node);
       }
       if (tagName === "br") {
@@ -137,7 +139,7 @@ var serialize = function (range, isLineStart) {
       result += "\t";
     }
     if (isBlock(display) && !isLineStart) {
-      result = result.replace(/[\u0020\n\r\t\v]$/g, "");
+      result = result.replace(/[\t\n\f\r\u0020]$/g, "");
       result += "\n";
       isLineStart = true;
     }
@@ -147,8 +149,8 @@ var serialize = function (range, isLineStart) {
 };
 
 var serializeAsPlainText = function (range) {
-  var isLineStart = !(range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.data.slice(0, range.startOffset).replace(/\s+/g, "") !== "");
-  var isLineEnd = !(range.endContainer.nodeType === Node.TEXT_NODE && range.endContainer.data.slice(range.endOffset, range.endContainer.data.length).replace(/\s+/g, "") !== "");
+  var isLineStart = range.startContainer.nodeType !== Node.TEXT_NODE || /^[\t\n\f\r\u0020]*$/.test(range.startContainer.data.slice(0, range.startOffset));
+  var isLineEnd = range.endContainer.nodeType !== Node.TEXT_NODE || /^[\t\n\f\r\u0020]*$/.test(range.endContainer.data.slice(range.endOffset));
   var staticRange = {
     startContainer: range.startContainer,
     startOffset: range.startOffset,
@@ -158,30 +160,12 @@ var serializeAsPlainText = function (range) {
   };
   var value = serialize(staticRange, false);
   if (isLineStart) {
-    value = value.replace(/^\s/g, "");
+    value = value.replace(/^[\t\n\f\r\u0020]/g, "");
   }
   if (isLineEnd) {
-    value = value.replace(/\s$/g, "");
+    value = value.replace(/[\t\n\f\r\u0020]$/g, "");
   }
   return value;
-};
-
-var isMathMLTagName = function (tagName) {
-  if (tagName.charCodeAt(0) === "m".charCodeAt(0)) {
-    switch (tagName) {
-      case "main":
-      case "map":
-      case "mark":
-      case "math":
-      case "menu":
-      case "menuitem":
-      case "meta":
-      case "meter":
-        return false;
-    }
-    return true;
-  }
-  return false;
 };
 
 var serializeAsHTML = function (range) {
